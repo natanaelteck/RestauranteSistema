@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RestauraMix — Cozinha</title>
+<style>
+  :root {
+    --bg: #0e1016;
+    --surface: #16191f;
+    --surface2: #1d2129;
+    --border: #282c38;
+    --accent: #f5a623;
+    --green: #2dcc7a;
+    --green-dim: rgba(45,204,122,.10);
+    --red: #e04444;
+    --red-dim: rgba(224,68,68,.10);
+    --blue: #4a90e2;
+    --blue-dim: rgba(74,144,226,.10);
+    --yellow: #f5c842;
+    --yellow-dim: rgba(245,200,66,.10);
+    --muted: #6b7280;
+    --text: #eaeaea;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  .nav-left { display: flex; align-items: center; gap: 20px; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; }
+  .live-dot {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .75rem; color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid rgba(45,204,122,.2);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+  .live-dot::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: blink 1.2s infinite;
+  }
+  @keyframes blink {
+    0%,100% { opacity:1; }
+    50% { opacity:0.2; }
+  }
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .8rem;
+    color: var(--muted);
+  }
+  .stat strong { color: var(--text); font-size: .95rem; }
+
+  /* KANBAN */
+  .kanban {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 20px;
+    flex: 1;
+    align-items: start;
+  }
+
+  .kanban-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    min-height: 200px;
+  }
+  .col-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 60px;
+    background: var(--surface);
+    z-index: 10;
+  }
+  .col-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: .95rem;
+  }
+  .col-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .col--aguardando .col-dot { background: var(--muted); }
+  .col--preparando .col-dot { background: var(--blue); animation: blink 1.5s infinite; }
+  .col--pronto .col-dot { background: var(--green); }
+
+  .col-badge {
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: .72rem;
+    font-weight: 700;
+  }
+  .col--aguardando .col-badge { background: rgba(107,114,128,.15); color: var(--muted); }
+  .col--preparando .col-badge { background: var(--blue-dim); color: var(--blue); }
+  .col--pronto .col-badge { background: var(--green-dim); color: var(--green); }
+
+  .col--aguardando { border-top: 2px solid var(--muted); }
+  .col--preparando { border-top: 2px solid var(--blue); }
+  .col--pronto { border-top: 2px solid var(--green); }
+
+  .col-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 120px;
+  }
+
+  /* COMANDA CARD */
+  .comanda {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0;
+    overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+    position: relative;
+  }
+  .comanda:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+
+  /* prioridade stripe */
+  .comanda::before {
+    content: '';
+    display: block;
+    height: 3px;
+    width: 100%;
+  }
+  .comanda[data-prio="normal"]::before { background: var(--green); }
+  .comanda[data-prio="alta"]::before { background: var(--yellow); }
+  .comanda[data-prio="urgente"]::before { background: var(--red); }
+
+  .comanda-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .comanda-id-mesa {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .comanda-id { font-size: .7rem; color: var(--muted); font-weight: 600; }
+  .comanda-mesa { font-size: 1.1rem; font-weight: 800; }
+  .comanda-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .comanda-time {
+    font-size: .7rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .prio-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .prio-badge.normal { background: var(--green-dim); color: var(--green); }
+  .prio-badge.alta { background: var(--yellow-dim); color: var(--yellow); }
+  .prio-badge.urgente { background: var(--red-dim); color: var(--red); }
+
+  /* urgente PULSE */
+  .comanda[data-prio="urgente"] {
+    box-shadow: 0 0 0 0 rgba(224,68,68,.4);
+    animation: urgentePulse 2s ease-out infinite;
+  }
+  @keyframes urgentePulse {
+    0% { box-shadow: 0 0 0 0 rgba(224,68,68,.4); }
+    70% { box-shadow: 0 0 0 8px rgba(224,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(224,68,68,0); }
+  }
+
+  .comanda-items {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .comanda-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: .88rem;
+  }
+  .comanda-item-qty {
+    font-weight: 800;
+    font-size: .95rem;
+    color: var(--accent);
+    min-width: 20px;
+  }
+  .comanda-item-name { color: var(--text); }
+
+  .comanda-obs {
+    padding: 0 12px 10px;
+    font-size: .76rem;
+    color: var(--muted);
+    font-style: italic;
+    background: rgba(255,255,255,.02);
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+  }
+
+  .comanda-elapsed {
+    padding: 0 12px 6px;
+    font-size: .68rem;
+    color: var(--muted);
+  }
+  .comanda-elapsed.warn { color: var(--yellow); }
+  .comanda-elapsed.danger { color: var(--red); }
+
+  /* AÇÕES */
+  .comanda-actions {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+  .action-btn {
+    flex: 1;
+    padding: 9px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .action-btn:not(:last-child) { border-right: 1px solid var(--border); }
+  .action-btn:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  .action-btn.advance { color: var(--blue); }
+  .action-btn.advance:hover { background: var(--blue-dim); }
+  .action-btn.done { color: var(--green); }
+  .action-btn.done:hover { background: var(--green-dim); }
+  .action-btn.reopen { color: var(--muted); }
+  .action-btn.remove-done { color: var(--muted); }
+  .action-btn.remove-done:hover { color: var(--red); background: var(--red-dim); }
+
+  /* EMPTY */
+  .col-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--muted);
+    font-size: .82rem;
+  }
+  .col-empty .eicon { font-size: 1.8rem; margin-bottom: 8px; }
+
+  /* SOUND TOGGLE */
+  .sound-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: .8rem;
+    transition: all .2s;
+  }
+  .sound-btn:hover { color: var(--text); }
+  .sound-btn.on { color: var(--accent); border-color: var(--accent); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: .85rem;
+    z-index: 999;
+    transform: translateY(60px);
+    opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* RELÓGIO */
+  .clock { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* FILTRO MESA */
+  .filter-bar {
+    padding: 8px 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-bar label { font-size: .78rem; color: var(--muted); }
+  .filter-bar select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 5px 10px;
+    font-size: .82rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .filter-bar select:focus { border-color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .kanban { grid-template-columns: 1fr; }
+    .stats-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-brand">👨‍🍳 Cozinha</div>
+    <div class="live-dot">AO VIVO</div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat">⏳ Aguardando: <strong id="st-aguardando">0</strong></div>
+    <div class="stat">🔥 Preparando: <strong id="st-preparando">0</strong></div>
+    <div class="stat">✅ Prontos: <strong id="st-pronto">0</strong></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="sound-btn" id="sound-btn" title="Som de notificação">🔔 Som</button>
+    <span class="clock" id="clock"></span>
+  </div>
+</nav>
+
+<div class="filter-bar">
+  <label>Filtrar mesa:</label>
+  <select id="filter-mesa" onchange="renderKanban()">
+    <option value="">Todas as mesas</option>
+  </select>
+</div>
+
+<div class="kanban">
+  <!-- AGUARDANDO -->
+  <div class="kanban-col col--aguardando">
+    <div class="col-header">
+      <div class="col-title">
+        <span class="col-dot"></span>
+        ⏳ Aguardando
+      </div>
+      <span class="col-badge" id="badge-aguardando">0</span>
+    </div>
+    <div class="col-body" id="col-aguardando"></div>
+  </div>
+
+  <!-- PREPARANDO -->
+  <div class="kanban-col col--preparando">
+    <div class="col-header">
+      <div class="col-title">
+        <span class="col-dot"></span>
+        🔥 Preparando
+      </div>
+      <span class="col-badge" id="badge-preparando">0</span>
+    </div>
+    <div class="col-body" id="col-preparando"></div>
+  </div>
+
+  <!-- PRONTO -->
+  <div class="kanban-col col--pronto">
+    <div class="col-header">
+      <div class="col-title">
+        <span class="col-dot"></span>
+        ✅ Pronto
+      </div>
+      <span class="col-badge" id="badge-pronto">0</span>
+    </div>
+    <div class="col-body" id="col-pronto"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─── STATE ────────────────────────────────────────────────────────────
+  const STORAGE_KEY = 'restauramix_orders';
+  const channel = new BroadcastChannel('restauramix');
+  let soundOn = false;
+  let knownIds = new Set();
+
+  function loadOrders() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+  function saveOrders(orders) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    channel.postMessage({ type: 'UPDATE' });
+  }
+
+  // ─── UTILITÁRIOS ──────────────────────────────────────────────────────
+  function formatTime(ts) {
+    return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function elapsedStr(ts) {
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 60) return diff + 's atrás';
+    const m = Math.floor(diff / 60);
+    const s = diff % 60;
+    return m + 'min ' + s + 's';
+  }
+  function elapsedClass(ts, status) {
+    if (status === 'pronto') return '';
+    const diff = (Date.now() - ts) / 1000 / 60;
+    if (diff > 15) return 'danger';
+    if (diff > 8) return 'warn';
+    return '';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  function playSound() {
+    if (!soundOn) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(); osc.stop(ctx.currentTime + 0.4);
+    } catch(e) {}
+  }
+
+  // ─── FILTRO ──────────────────────────────────────────────────────────
+  function updateFilterOptions() {
+    const orders = loadOrders().filter(o => o.status !== 'cancelado');
+    const mesas = [...new Set(orders.map(o => o.mesa))].sort((a,b) => a-b);
+    const sel = document.getElementById('filter-mesa');
+    const curVal = sel.value;
+    sel.innerHTML = '<option value="">Todas as mesas</option>';
+    mesas.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = `Mesa ${m}`;
+      sel.appendChild(opt);
+    });
+    sel.value = curVal;
+  }
+
+  // ─── MOVER STATUS ─────────────────────────────────────────────────────
+  function advanceOrder(id) {
+    const orders = loadOrders();
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    if (o.status === 'aguardando') o.status = 'preparando';
+    else if (o.status === 'preparando') o.status = 'pronto';
+    saveOrders(orders);
+    renderKanban();
+  }
+  function reopenOrder(id) {
+    const orders = loadOrders();
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    if (o.status === 'pronto') o.status = 'preparando';
+    else if (o.status === 'preparando') o.status = 'aguardando';
+    saveOrders(orders);
+    renderKanban();
+  }
+  function removeOrder(id) {
+    const orders = loadOrders();
+    const idx = orders.findIndex(x => x.id === id);
+    if (idx > -1) {
+      orders[idx].status = 'cancelado';
+      saveOrders(orders);
+      renderKanban();
+      showToast('🗑️ Comanda removida');
+    }
+  }
+
+  // ─── BUILD COMANDA HTML ───────────────────────────────────────────────
+  function buildComanda(o) {
+    const elapsed = elapsedStr(o.ts);
+    const ec = elapsedClass(o.ts, o.status);
+    const nextBtn = o.status === 'aguardando'
+      ? `<button class="action-btn advance" onclick="advanceOrder('${o.id}')">🔥 Iniciar preparo</button>`
+      : o.status === 'preparando'
+      ? `<button class="action-btn done" onclick="advanceOrder('${o.id}')">✅ Marcar pronto</button>`
+      : '';
+    const backBtn = o.status !== 'aguardando'
+      ? `<button class="action-btn reopen" onclick="reopenOrder('${o.id}')">↩ Voltar</button>`
+      : '';
+    const removeBtn = o.status === 'pronto'
+      ? `<button class="action-btn remove-done" onclick="removeOrder('${o.id}')">🗑️</button>`
+      : '';
+
+    return `
+      <div class="comanda" data-prio="${o.prioridade}" data-id="${o.id}">
+        <div class="comanda-header">
+          <div class="comanda-id-mesa">
+            <span class="comanda-id">${o.id}</span>
+            <span class="comanda-mesa">Mesa ${o.mesa}</span>
+          </div>
+          <div class="comanda-meta">
+            <span class="prio-badge ${o.prioridade}">${
+              o.prioridade === 'urgente' ? '🔴 Urgente' :
+              o.prioridade === 'alta' ? '🟡 Alta' : '🟢 Normal'
+            }</span>
+            <span class="comanda-time">🕐 ${formatTime(o.ts)}</span>
+          </div>
+        </div>
+        <div class="comanda-items">
+          ${o.items.map(i => `
+            <div class="comanda-item">
+              <span class="comanda-item-qty">${i.qty}x</span>
+              <span class="comanda-item-name">${i.name}</span>
+            </div>
+          `).join('')}
+        </div>
+        ${o.obs ? `<div class="comanda-obs">💬 ${o.obs}</div>` : ''}
+        <div class="comanda-elapsed ${ec}">⏱ ${elapsed}</div>
+        <div class="comanda-actions">
+          ${nextBtn}${backBtn}${removeBtn}
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── RENDER KANBAN ────────────────────────────────────────────────────
+  function renderKanban() {
+    const filterMesa = document.getElementById('filter-mesa').value;
+    let orders = loadOrders().filter(o => o.status !== 'cancelado');
+    if (filterMesa) orders = orders.filter(o => o.mesa == filterMesa);
+
+    // detect new
+    orders.forEach(o => {
+      if (!knownIds.has(o.id)) {
+        if (knownIds.size > 0) {
+          playSound();
+          showToast(`🆕 Nova comanda! Mesa ${o.mesa} — ${o.id}`);
+        }
+        knownIds.add(o.id);
+      }
+    });
+
+    // priority sort helper
+    const pmap = { urgente: 0, alta: 1, normal: 2 };
+    const sort = arr => arr.sort((a,b) => (pmap[a.prioridade] - pmap[b.prioridade]) || (a.ts - b.ts));
+
+    const aguardando = sort(orders.filter(o => o.status === 'aguardando'));
+    const preparando = sort(orders.filter(o => o.status === 'preparando'));
+    const pronto     = orders.filter(o => o.status === 'pronto').sort((a,b) => b.ts - a.ts);
+
+    // stats
+    document.getElementById('st-aguardando').textContent = aguardando.length;
+    document.getElementById('st-preparando').textContent = preparando.length;
+    document.getElementById('st-pronto').textContent = pronto.length;
+    document.getElementById('badge-aguardando').textContent = aguardando.length;
+    document.getElementById('badge-preparando').textContent = preparando.length;
+    document.getElementById('badge-pronto').textContent = pronto.length;
+
+    const renderCol = (list, colId, emptyMsg, emptyIcon) => {
+      const col = document.getElementById(colId);
+      if (list.length === 0) {
+        col.innerHTML = `<div class="col-empty"><div class="eicon">${emptyIcon}</div>${emptyMsg}</div>`;
+      } else {
+        col.innerHTML = list.map(buildComanda).join('');
+      }
+    };
+
+    renderCol(aguardando, 'col-aguardando', 'Nenhum pedido aguardando', '☕');
+    renderCol(preparando, 'col-preparando', 'Nada sendo preparado agora', '🧑‍🍳');
+    renderCol(pronto, 'col-pronto', 'Nenhum prato pronto ainda', '🍽️');
+
+    updateFilterOptions();
+  }
+
+  // ─── RELÓGIO ──────────────────────────────────────────────────────────
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  // ─── ELAPSED UPDATE (sem re-render completo) ──────────────────────────
+  function updateElapsed() {
+    document.querySelectorAll('.comanda').forEach(card => {
+      const id = card.dataset.id;
+      const orders = loadOrders();
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      const el = card.querySelector('.comanda-elapsed');
+      if (el) {
+        el.textContent = '⏱ ' + elapsedStr(o.ts);
+        el.className = 'comanda-elapsed ' + elapsedClass(o.ts, o.status);
+      }
+    });
+  }
+
+  // ─── SOM ─────────────────────────────────────────────────────────────
+  document.getElementById('sound-btn').addEventListener('click', function() {
+    soundOn = !soundOn;
+    this.classList.toggle('on', soundOn);
+    this.textContent = soundOn ? '🔔 Som ON' : '🔕 Som OFF';
+    if (soundOn) playSound();
+  });
+
+  // ─── CANAL ────────────────────────────────────────────────────────────
+  channel.onmessage = () => renderKanban();
+
+  // Inicializa set de IDs já conhecidos (sem notificar)
+  loadOrders().filter(o => o.status !== 'cancelado').forEach(o => knownIds.add(o.id));
+
+  // ─── INIT ─────────────────────────────────────────────────────────────
+  renderKanban();
+  updateClock();
+  setInterval(updateClock, 1000);
+  setInterval(updateElapsed, 5000);
+  // re-render leve a cada 30s para manter elapsed e urgências
+  setInterval(renderKanban, 30000);
+</script>
+</body>
+</html>
