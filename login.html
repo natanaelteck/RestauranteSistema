@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RestauraMix — Acesso</title>
+<style>
+  :root {
+    --bg: #0e1016;
+    --surface: #16191f;
+    --surface2: #1d2129;
+    --border: #282c38;
+    --accent: #f5a623;
+    --accent2: #e05c2a;
+    --green: #2dcc7a;
+    --red: #e04444;
+    --text: #eaeaea;
+    --muted: #6b7280;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+  }
+
+  /* ── TELA DE AUTH ── */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(245,166,35,.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(224,92,42,.05) 0%, transparent 50%),
+      var(--bg);
+  }
+
+  .auth-box {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px 36px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.5);
+  }
+
+  /* LOGO */
+  .auth-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 14px;
+    box-shadow: 0 8px 24px rgba(245,166,35,.3);
+  }
+  .logo-name {
+    font-size: 1.7rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+  .logo-name em { color: var(--accent); font-style: normal; }
+  .logo-sub {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: .04em;
+  }
+
+  /* TABS AUTH */
+  .auth-tabs {
+    display: flex;
+    background: var(--surface2);
+    border-radius: 50px;
+    padding: 4px;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 9px;
+    border-radius: 50px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .auth-tab.active {
+    background: var(--accent);
+    color: #111;
+  }
+
+  /* FORM */
+  .auth-form { display: flex; flex-direction: column; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: .78rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .field input {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: .95rem;
+    outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field input.error { border-color: var(--red); }
+  .field-error {
+    font-size: .75rem;
+    color: var(--red);
+    display: none;
+  }
+  .field-error.show { display: block; }
+
+  .btn-main {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #111;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 4px;
+  }
+  .btn-main:hover { opacity: .9; transform: translateY(-1px); }
+  .btn-main:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  /* SPINNER */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,.3);
+    border-top-color: #111;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+  .spinner.show { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ALERT */
+  .alert {
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: .85rem;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .alert.show { display: flex; }
+  .alert.success { background: rgba(45,204,122,.1); border: 1px solid rgba(45,204,122,.3); color: var(--green); }
+  .alert.error { background: rgba(224,68,68,.1); border: 1px solid rgba(224,68,68,.3); color: var(--red); }
+  .alert.info { background: rgba(245,166,35,.1); border: 1px solid rgba(245,166,35,.3); color: var(--accent); }
+
+  /* CONFIG BANNER */
+  .config-wrap {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .config-wrap summary {
+    font-size: .78rem;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .config-wrap summary:hover { color: var(--accent); }
+  .config-inner {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .config-inner input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: .82rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .config-inner input:focus { border-color: var(--accent); }
+  .btn-sm {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .2s;
+    align-self: flex-start;
+  }
+  .btn-accent-sm { background: var(--accent); color: #111; }
+  .btn-accent-sm:hover { opacity: .88; }
+  .btn-link {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: .75rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+
+  /* ── TELA DASHBOARD ── */
+  #dashboard-screen { display: none; min-height: 100vh; flex-direction: column; }
+  #dashboard-screen.show { display: flex; }
+
+  /* HEADER DASHBOARD */
+  .dash-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .dash-logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .dash-logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+  .dash-logo-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -.3px; }
+  .dash-logo-name em { color: var(--accent); font-style: normal; }
+  .dash-user {
+    display: flex; align-items: center; gap: 12px;
+    font-size: .85rem; color: var(--muted);
+  }
+  .user-avatar {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; font-weight: 700; color: #111;
+  }
+  .btn-logout {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: .78rem;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  /* DASH HERO */
+  .dash-hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    text-align: center;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(245,166,35,.08) 0%, transparent 60%),
+      var(--bg);
+  }
+
+  /* LOGO GRANDE */
+  .big-logo {
+    margin-bottom: 32px;
+  }
+  .big-logo-plate {
+    width: 120px; height: 120px;
+    background: linear-gradient(145deg, #1e2230, #13151c);
+    border: 2px solid rgba(245,166,35,.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow:
+      0 0 0 8px rgba(245,166,35,.05),
+      0 0 0 16px rgba(245,166,35,.02),
+      0 20px 60px rgba(0,0,0,.5);
+    position: relative;
+  }
+  .big-logo-plate::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--accent), var(--accent2), var(--accent));
+    z-index: -1;
+    opacity: .4;
+  }
+  .big-logo-emoji { font-size: 3.2rem; }
+  .big-logo-name {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .big-logo-name em { color: var(--accent); font-style: normal; }
+  .big-logo-tagline {
+    font-size: .95rem;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: .04em;
+  }
+
+  .welcome-msg {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .welcome-msg strong { color: var(--text); }
+
+  /* QUICK CARDS */
+  .quick-cards {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 40px;
+  }
+  .quick-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    min-width: 160px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all .2s;
+    text-align: center;
+  }
+  .quick-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  .quick-card .qc-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+  .quick-card .qc-label { font-size: .88rem; font-weight: 700; }
+  .quick-card .qc-sub { font-size: .75rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── ABA FLUTUANTE ── */
+  .fab-wrap {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .fab-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    transform-origin: bottom right;
+    transition: all .25s cubic-bezier(.4,0,.2,1);
+    opacity: 0;
+    transform: scale(.9) translateY(10px);
+    pointer-events: none;
+  }
+  .fab-menu.open {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: all;
+  }
+  .fab-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 10px 18px 10px 12px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: .88rem;
+    font-weight: 600;
+    transition: all .2s;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  .fab-item:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateX(-4px);
+  }
+  .fab-item .fi-icon {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .fab-btn {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 20px rgba(245,166,35,.4);
+    transition: all .2s;
+    color: #111;
+  }
+  .fab-btn:hover { transform: scale(1.08); }
+  .fab-btn .fab-icon { transition: transform .3s; }
+  .fab-btn.open .fab-icon { transform: rotate(45deg); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 20px;
+    font-size: .88rem; font-weight: 500;
+    opacity: 0; transition: all .3s ease;
+    z-index: 999; display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (max-width: 480px) {
+    .auth-box { padding: 28px 20px; }
+    .big-logo-name { font-size: 2rem; }
+    .quick-cards { gap: 10px; }
+    .quick-card { min-width: 130px; padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     TELA DE AUTENTICAÇÃO
+══════════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+
+    <div class="auth-logo">
+      <div class="logo-icon">🍽️</div>
+      <div class="logo-name">Restaura<em>Mix</em></div>
+      <div class="logo-sub">SISTEMA DE GESTÃO</div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login', this)">Entrar</button>
+      <button class="auth-tab" onclick="switchAuthTab('cadastro', this)">Cadastrar</button>
+    </div>
+
+    <!-- ALERT GLOBAL -->
+    <div class="alert" id="auth-alert"></div>
+
+    <!-- ── LOGIN ── -->
+    <div id="form-login">
+      <div class="auth-form">
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="l-email" placeholder="seu@email.com" autocomplete="email" />
+          <span class="field-error" id="l-email-err">E-mail inválido</span>
+        </div>
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" id="l-senha" placeholder="••••••••" autocomplete="current-password" />
+          <span class="field-error" id="l-senha-err">Senha obrigatória</span>
+        </div>
+        <button class="btn-main" id="btn-login" onclick="fazerLogin()">
+          <div class="spinner" id="spin-login"></div>
+          <span id="btn-login-txt">Entrar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── CADASTRO ── -->
+    <div id="form-cadastro" style="display:none">
+      <div class="auth-form">
+        <div class="field">
+          <label>Nome completo</label>
+          <input type="text" id="c-nome" placeholder="João Silva" autocomplete="name" maxlength="60" />
+          <span class="field-error" id="c-nome-err">Nome obrigatório</span>
+        </div>
+        <div class="field">
+          <label>E-mail</label>
+          <input type="email" id="c-email" placeholder="seu@email.com" autocomplete="email" />
+          <span class="field-error" id="c-email-err">E-mail inválido</span>
+        </div>
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" id="c-senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+          <span class="field-error" id="c-senha-err">Mínimo 6 caracteres</span>
+        </div>
+        <div class="field">
+          <label>Confirmar senha</label>
+          <input type="password" id="c-senha2" placeholder="Repita a senha" autocomplete="new-password" />
+          <span class="field-error" id="c-senha2-err">As senhas não coincidem</span>
+        </div>
+        <button class="btn-main" id="btn-cadastro" onclick="fazerCadastro()">
+          <div class="spinner" id="spin-cadastro"></div>
+          <span id="btn-cadastro-txt">Criar conta</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONFIG SCRIPT URL -->
+    <details class="config-wrap">
+      <summary>⚙️ Configurar banco de dados (Google Sheets)</summary>
+      <div class="config-inner">
+        <input type="text" id="script-url-input" placeholder="https://script.google.com/macros/s/SEU_ID/exec" />
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-sm btn-accent-sm" onclick="salvarScriptUrl()">Salvar URL</button>
+          <button class="btn-link" onclick="mostrarAjuda()">Como criar o script?</button>
+        </div>
+        <div id="url-status" style="font-size:.75rem;color:var(--muted)"></div>
+      </div>
+    </details>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     DASHBOARD (pós-login)
+══════════════════════════════════════════════════ -->
+<div id="dashboard-screen">
+
+  <header class="dash-header">
+    <div class="dash-logo">
+      <div class="dash-logo-icon">🍽️</div>
+      <div class="dash-logo-name">Restaura<em>Mix</em></div>
+    </div>
+    <div class="dash-user">
+      <span id="dash-user-name">Usuário</span>
+      <div class="user-avatar" id="dash-avatar">?</div>
+      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="dash-hero">
+
+    <!-- LOGO GRANDE (substituível) -->
+    <div class="big-logo">
+      <div class="big-logo-plate">
+        <span class="big-logo-emoji">🍽️</span>
+      </div>
+      <div class="big-logo-name">Restaura<em>Mix</em></div>
+      <div class="big-logo-tagline">Sistema de Gestão para Restaurantes</div>
+    </div>
+
+    <div class="welcome-msg">Bem-vindo, <strong id="welcome-name">usuário</strong>!</div>
+
+    <!-- QUICK ACCESS CARDS -->
+    <div class="quick-cards">
+      <a class="quick-card" href="https://natanaelteck.github.io/RestauranteSistema/" target="_blank">
+        <span class="qc-icon">🧾</span>
+        <div class="qc-label">Garçom</div>
+        <div class="qc-sub">Pedidos por mesa</div>
+      </a>
+      <a class="quick-card" href="https://natanaelteck.github.io/RestauranteSistema/cozinha.html" target="_blank">
+        <span class="qc-icon">👨‍🍳</span>
+        <div class="qc-label">Cozinha</div>
+        <div class="qc-sub">Kanban de pedidos</div>
+      </a>
+      <a class="quick-card" href="https://natanaelteck.github.io/RestauranteSistema/admin.html" target="_blank">
+        <span class="qc-icon">📊</span>
+        <div class="qc-label">Admin</div>
+        <div class="qc-sub">Relatórios e cardápio</div>
+      </a>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ABA FLUTUANTE -->
+<div class="fab-wrap" id="fab-wrap" style="display:none">
+  <div class="fab-menu" id="fab-menu">
+    <a class="fab-item" href="https://natanaelteck.github.io/RestauranteSistema/" target="_blank">
+      <div class="fi-icon" style="background:rgba(245,166,35,.15)">🧾</div>
+      Garçom — Pedidos
+    </a>
+    <a class="fab-item" href="https://natanaelteck.github.io/RestauranteSistema/cozinha.html" target="_blank">
+      <div class="fi-icon" style="background:rgba(224,92,42,.15)">👨‍🍳</div>
+      Cozinha — Kanban
+    </a>
+    <a class="fab-item" href="https://natanaelteck.github.io/RestauranteSistema/admin.html" target="_blank">
+      <div class="fi-icon" style="background:rgba(74,144,226,.15)">📊</div>
+      Admin — Relatórios
+    </a>
+  </div>
+  <button class="fab-btn" id="fab-btn" onclick="toggleFab()">
+    <span class="fab-icon">＋</span>
+  </button>
+</div>
+
+<!-- MODAL AJUDA SCRIPT -->
+<div id="ajuda-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto">
+    <h3 style="color:var(--accent);margin-bottom:16px">⚙️ Criar o Apps Script</h3>
+    <ol style="color:var(--muted);font-size:.85rem;line-height:2.2;padding-left:18px">
+      <li>Acesse <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">sheets.google.com</a> e crie uma planilha nova</li>
+      <li>Nomeie como <strong style="color:var(--text)">RestauraMix — Usuários</strong></li>
+      <li>Vá em <strong style="color:var(--text)">Extensões → Apps Script</strong></li>
+      <li>Apague o código existente e cole o código abaixo</li>
+      <li>Clique em <strong style="color:var(--text)">Implantar → Nova implantação</strong></li>
+      <li>Tipo: <strong style="color:var(--text)">App da Web</strong> | Executar como: <strong style="color:var(--text)">Eu</strong></li>
+      <li>Quem tem acesso: <strong style="color:var(--text)">Qualquer pessoa</strong></li>
+      <li>Copie a URL e cole no campo acima</li>
+    </ol>
+    <div id="modal-script-code" style="margin-top:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:.72rem;color:var(--green);white-space:pre-wrap;max-height:260px;overflow-y:auto;user-select:all"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-sm btn-accent-sm" style="flex:1" onclick="copiarScript()">📋 Copiar código</button>
+      <button class="btn-sm" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--muted)" onclick="fecharAjuda()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── APPS SCRIPT CODE ──────────────────────────────────────────────────────────
+const SCRIPT_CODE = `function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Usuarios') || ss.insertSheet('Usuarios');
+  var data = JSON.parse(e.postData.contents);
+  var action = data.action;
+
+  // Cabeçalho
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['ID', 'Nome', 'Email', 'SenhaHash', 'DataCadastro']);
+    sheet.getRange(1,1,1,5).setFontWeight('bold');
+  }
+
+  if (action === 'CADASTRO') {
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][2] === data.email) {
+        return json({ ok: false, error: 'email_existe' });
+      }
+    }
+    sheet.appendRow([
+      data.id, data.nome, data.email, data.senhaHash,
+      new Date().toLocaleString('pt-BR')
+    ]);
+    return json({ ok: true });
+  }
+
+  if (action === 'LOGIN') {
+    var rows2 = sheet.getDataRange().getValues();
+    for (var j = 1; j < rows2.length; j++) {
+      if (rows2[j][2] === data.email && rows2[j][3] === data.senhaHash) {
+        return json({ ok: true, usuario: { id: rows2[j][0], nome: rows2[j][1], email: rows2[j][2] } });
+      }
+    }
+    return json({ ok: false, error: 'credenciais_invalidas' });
+  }
+
+  return json({ ok: false, error: 'acao_invalida' });
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, msg: 'RestauraMix API' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+document.getElementById('modal-script-code').textContent = SCRIPT_CODE;
+
+// ── CONSTANTES ────────────────────────────────────────────────────────────────
+const SCRIPT_KEY = 'restauramix_auth_script';
+const SESSION_KEY = 'restauramix_session';
+let toastTimer = null;
+
+// ── HASH SHA-256 ──────────────────────────────────────────────────────────────
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function init() {
+  const url = localStorage.getItem(SCRIPT_KEY) || '';
+  if (url) document.getElementById('script-url-input').value = url;
+  updateUrlStatus(url);
+
+  const session = getSession();
+  if (session) {
+    mostrarDashboard(session);
+  }
+
+  // Enter nos campos
+  ['l-email','l-senha'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
+  });
+  ['c-nome','c-email','c-senha','c-senha2'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') fazerCadastro(); });
+  });
+}
+
+// ── SESSÃO ────────────────────────────────────────────────────────────────────
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+}
+function setSession(usuario) { localStorage.setItem(SESSION_KEY, JSON.stringify(usuario)); }
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+// ── TABS AUTH ─────────────────────────────────────────────────────────────────
+function switchAuthTab(tab, btn) {
+  document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('form-cadastro').style.display = tab === 'cadastro' ? 'block' : 'none';
+  esconderAlert();
+}
+
+// ── ALERT ─────────────────────────────────────────────────────────────────────
+function mostrarAlert(tipo, msg) {
+  const el = document.getElementById('auth-alert');
+  el.className = 'alert ' + tipo + ' show';
+  el.innerHTML = (tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : 'ℹ️') + ' ' + msg;
+}
+function esconderAlert() {
+  document.getElementById('auth-alert').className = 'alert';
+}
+
+// ── VALIDAÇÃO ─────────────────────────────────────────────────────────────────
+function validarEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+
+function setFieldError(id, errId, show) {
+  const input = document.getElementById(id);
+  const err = document.getElementById(errId);
+  if (show) {
+    input.classList.add('error');
+    err.classList.add('show');
+  } else {
+    input.classList.remove('error');
+    err.classList.remove('show');
+  }
+}
+
+// ── LOADING ───────────────────────────────────────────────────────────────────
+function setLoading(prefix, on) {
+  document.getElementById('btn-' + prefix).disabled = on;
+  document.getElementById('spin-' + prefix).className = 'spinner' + (on ? ' show' : '');
+  document.getElementById('btn-' + prefix + '-txt').textContent = on
+    ? (prefix === 'login' ? 'Entrando...' : 'Cadastrando...')
+    : (prefix === 'login' ? 'Entrar' : 'Criar conta');
+}
+
+// ── SCRIPT URL ────────────────────────────────────────────────────────────────
+function salvarScriptUrl() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showToast('URL inválida', '⚠️'); return;
+  }
+  localStorage.setItem(SCRIPT_KEY, url);
+  updateUrlStatus(url);
+  showToast('URL salva!', '✅');
+}
+
+function updateUrlStatus(url) {
+  const el = document.getElementById('url-status');
+  el.textContent = url ? '✅ Script configurado' : '⚠️ Script não configurado — dados serão salvos apenas localmente';
+  el.style.color = url ? 'var(--green)' : 'var(--accent)';
+}
+
+function getScriptUrl() { return localStorage.getItem(SCRIPT_KEY) || ''; }
+
+// ── CADASTRO ──────────────────────────────────────────────────────────────────
+async function fazerCadastro() {
+  const nome = document.getElementById('c-nome').value.trim();
+  const email = document.getElementById('c-email').value.trim();
+  const senha = document.getElementById('c-senha').value;
+  const senha2 = document.getElementById('c-senha2').value;
+
+  // Validações
+  let ok = true;
+  setFieldError('c-nome', 'c-nome-err', !nome); if (!nome) ok = false;
+  setFieldError('c-email', 'c-email-err', !validarEmail(email)); if (!validarEmail(email)) ok = false;
+  setFieldError('c-senha', 'c-senha-err', senha.length < 6); if (senha.length < 6) ok = false;
+  setFieldError('c-senha2', 'c-senha2-err', senha !== senha2); if (senha !== senha2) ok = false;
+  if (!ok) return;
+
+  setLoading('cadastro', true);
+  esconderAlert();
+
+  try {
+    const senhaHash = await sha256(senha);
+    const id = 'u' + Date.now();
+    const usuario = { id, nome, email };
+
+    const url = getScriptUrl();
+    if (url) {
+      const res = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'CADASTRO', id, nome, email, senhaHash })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        if (data.error === 'email_existe') {
+          mostrarAlert('error', 'Este e-mail já está cadastrado.');
+        } else {
+          mostrarAlert('error', 'Erro ao cadastrar. Tente novamente.');
+        }
+        setLoading('cadastro', false);
+        return;
+      }
+    } else {
+      // Fallback local
+      const local = JSON.parse(localStorage.getItem('restauramix_users_local') || '[]');
+      if (local.find(u => u.email === email)) {
+        mostrarAlert('error', 'Este e-mail já está cadastrado.');
+        setLoading('cadastro', false);
+        return;
+      }
+      local.push({ id, nome, email, senhaHash });
+      localStorage.setItem('restauramix_users_local', JSON.stringify(local));
+    }
+
+    mostrarAlert('success', `Conta criada com sucesso! Bem-vindo, ${nome}!`);
+    setSession(usuario);
+    setTimeout(() => mostrarDashboard(usuario), 1200);
+
+  } catch (err) {
+    mostrarAlert('error', 'Erro de conexão. Verifique a URL do script.');
+  }
+  setLoading('cadastro', false);
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+async function fazerLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const senha = document.getElementById('l-senha').value;
+
+  let ok = true;
+  setFieldError('l-email', 'l-email-err', !validarEmail(email)); if (!validarEmail(email)) ok = false;
+  setFieldError('l-senha', 'l-senha-err', !senha); if (!senha) ok = false;
+  if (!ok) return;
+
+  setLoading('login', true);
+  esconderAlert();
+
+  try {
+    const senhaHash = await sha256(senha);
+    const url = getScriptUrl();
+    let usuario = null;
+
+    if (url) {
+      const res = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'LOGIN', email, senhaHash })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        mostrarAlert('error', 'E-mail ou senha incorretos.');
+        setLoading('login', false);
+        return;
+      }
+      usuario = data.usuario;
+    } else {
+      // Fallback local
+      const local = JSON.parse(localStorage.getItem('restauramix_users_local') || '[]');
+      const found = local.find(u => u.email === email && u.senhaHash === senhaHash);
+      if (!found) {
+        mostrarAlert('error', 'E-mail ou senha incorretos.');
+        setLoading('login', false);
+        return;
+      }
+      usuario = { id: found.id, nome: found.nome, email: found.email };
+    }
+
+    setSession(usuario);
+    mostrarDashboard(usuario);
+
+  } catch (err) {
+    mostrarAlert('error', 'Erro de conexão. Verifique a URL do script.');
+  }
+  setLoading('login', false);
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function mostrarDashboard(usuario) {
+  document.getElementById('auth-screen').style.display = 'none';
+  const dash = document.getElementById('dashboard-screen');
+  dash.classList.add('show');
+  document.getElementById('fab-wrap').style.display = 'flex';
+
+  const primeiro = (usuario.nome || 'Usuário').split(' ')[0];
+  document.getElementById('dash-user-name').textContent = usuario.email;
+  document.getElementById('dash-avatar').textContent = primeiro[0].toUpperCase();
+  document.getElementById('welcome-name').textContent = primeiro;
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────────────────────
+function fazerLogout() {
+  clearSession();
+  document.getElementById('dashboard-screen').classList.remove('show');
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('fab-wrap').style.display = 'none';
+  document.getElementById('l-email').value = '';
+  document.getElementById('l-senha').value = '';
+  esconderAlert();
+  switchAuthTab('login', document.querySelector('.auth-tab'));
+}
+
+// ── FAB ───────────────────────────────────────────────────────────────────────
+let fabOpen = false;
+function toggleFab() {
+  fabOpen = !fabOpen;
+  const btn = document.getElementById('fab-btn');
+  const menu = document.getElementById('fab-menu');
+  btn.classList.toggle('open', fabOpen);
+  menu.classList.toggle('open', fabOpen);
+}
+document.addEventListener('click', e => {
+  if (fabOpen && !document.getElementById('fab-wrap').contains(e.target)) {
+    fabOpen = false;
+    document.getElementById('fab-btn').classList.remove('open');
+    document.getElementById('fab-menu').classList.remove('open');
+  }
+});
+
+// ── AJUDA MODAL ───────────────────────────────────────────────────────────────
+function mostrarAjuda() {
+  document.getElementById('ajuda-modal').style.display = 'flex';
+}
+function fecharAjuda() {
+  document.getElementById('ajuda-modal').style.display = 'none';
+}
+function copiarScript() {
+  navigator.clipboard.writeText(SCRIPT_CODE)
+    .then(() => showToast('Código copiado!', '📋'))
+    .catch(() => showToast('Selecione e copie manualmente', '⚠️'));
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, icon = '✅') {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${icon}</span> ${msg}`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
