@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RestauraMix — Admin</title>
+<style>
+  :root {
+    --bg: #0e1016;
+    --surface: #16191f;
+    --surface2: #1d2129;
+    --border: #282c38;
+    --accent: #f5a623;
+    --green: #2dcc7a;
+    --red: #e04444;
+    --blue: #4a90e2;
+    --purple: #9b59b6;
+    --text: #eaeaea;
+    --muted: #6b7280;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* NAV */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px; position: sticky; top: 0; z-index: 100; flex-shrink: 0;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; }
+  .nav-badge { background: rgba(155,89,182,.15); color: var(--purple); border: 1px solid rgba(155,89,182,.3); border-radius: 20px; padding: 3px 12px; font-size: .75rem; font-weight: 600; }
+  .nav-links { display: flex; gap: 6px; }
+  .nav-link { color: var(--muted); text-decoration: none; font-size: .85rem; padding: 6px 12px; border-radius: 6px; transition: all .2s; }
+  .nav-link:hover { color: var(--text); background: var(--surface2); }
+
+  /* SHEETS CONFIG BANNER */
+  .config-banner {
+    background: rgba(245,166,35,.08);
+    border-bottom: 1px solid rgba(245,166,35,.2);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-size: .85rem;
+  }
+  .config-banner.ok { background: rgba(45,204,122,.07); border-color: rgba(45,204,122,.2); }
+  .config-banner input {
+    flex: 1; max-width: 500px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    font-family: var(--font); font-size: .85rem; outline: none;
+    transition: border-color .2s;
+  }
+  .config-banner input:focus { border-color: var(--accent); }
+  .btn-sm {
+    padding: 8px 16px; border-radius: 8px; font-size: .82rem; font-weight: 600;
+    cursor: pointer; border: none; transition: all .2s;
+  }
+  .btn-accent { background: var(--accent); color: #111; }
+  .btn-accent:hover { opacity: .88; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(224,68,68,.1); }
+  .btn-green { background: var(--green); color: #111; }
+  .btn-green:hover { opacity: .88; }
+
+  /* TABS */
+  .tab-bar {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    background: var(--surface); padding: 0 24px;
+  }
+  .tab-btn {
+    padding: 14px 20px; background: transparent; border: none;
+    border-bottom: 2px solid transparent; color: var(--muted);
+    font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
+    margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* MAIN */
+  main { flex: 1; padding: 28px 24px; max-width: 1200px; width: 100%; margin: 0 auto; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 18px;
+  }
+  .kpi-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .kpi-value { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .kpi-sub { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+  .kpi-card.accent .kpi-value { color: var(--accent); }
+  .kpi-card.green .kpi-value { color: var(--green); }
+  .kpi-card.blue .kpi-value { color: var(--blue); }
+  .kpi-card.purple .kpi-value { color: var(--purple); }
+
+  /* SECTION */
+  .section { margin-bottom: 28px; }
+  .section-title {
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-title span { color: var(--text); font-size: .85rem; font-weight: 700; text-transform: none; letter-spacing: 0; }
+
+  /* REPORT GRID */
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 768px) { .report-grid { grid-template-columns: 1fr; } }
+
+  .report-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .report-card-title { font-size: .82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 16px; }
+
+  /* RANKING LIST */
+  .rank-list { display: flex; flex-direction: column; gap: 10px; }
+  .rank-item {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .rank-pos { width: 24px; height: 24px; border-radius: 50%; background: var(--surface2); color: var(--muted); font-size: .72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .rank-pos.gold { background: rgba(245,166,35,.2); color: var(--accent); }
+  .rank-pos.silver { background: rgba(74,144,226,.15); color: var(--blue); }
+  .rank-pos.bronze { background: rgba(45,204,122,.12); color: var(--green); }
+  .rank-name { flex: 1; font-size: .9rem; }
+  .rank-bar-wrap { width: 80px; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .rank-bar { height: 100%; background: var(--accent); border-radius: 3px; transition: width .6s ease; }
+  .rank-count { font-size: .82rem; font-weight: 700; color: var(--accent); min-width: 32px; text-align: right; }
+
+  /* BAR CHART */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding-top: 10px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar-fill { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; transition: height .5s ease; }
+  .bar-label { font-size: .65rem; color: var(--muted); text-align: center; }
+  .bar-val { font-size: .7rem; font-weight: 700; color: var(--text); }
+
+  /* MESA HEATMAP */
+  .mesa-heat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .heat-cell {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 6px; text-align: center;
+    transition: all .2s;
+  }
+  .heat-cell .h-num { font-size: .9rem; font-weight: 700; }
+  .heat-cell .h-count { font-size: .65rem; color: var(--muted); margin-top: 2px; }
+
+  /* FILTER ROW */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 20px; font-size: .8rem; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: var(--surface2);
+    color: var(--muted); transition: all .2s;
+  }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(245,166,35,.08); }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty .icon { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+
+  /* ── CARDÁPIO / PRODUTOS ── */
+  .produtos-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
+  @media (max-width: 900px) { .produtos-layout { grid-template-columns: 1fr; } }
+
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    display: flex; flex-direction: column; gap: 16px;
+    align-self: start;
+  }
+  .form-card h3 { font-size: .82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: .78rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .field input, .field select {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px;
+    color: var(--text); font-family: var(--font); font-size: .9rem;
+    outline: none; transition: border-color .2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+
+  .produtos-list { display: flex; flex-direction: column; gap: 10px; }
+  .produto-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    transition: border-color .2s;
+  }
+  .produto-card:hover { border-color: var(--accent); }
+  .produto-cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .produto-info { flex: 1; }
+  .produto-info h4 { font-size: .95rem; font-weight: 700; }
+  .produto-info p { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+  .produto-price { font-size: 1rem; font-weight: 800; color: var(--green); }
+  .produto-actions { display: flex; gap: 6px; }
+  .btn-icon {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; transition: all .2s;
+  }
+  .btn-icon:hover { border-color: var(--red); color: var(--red); }
+  .btn-icon.edit:hover { border-color: var(--blue); color: var(--blue); }
+
+  .sync-status { font-size: .75rem; display: flex; align-items: center; gap: 6px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .sync-dot.ok { background: var(--green); }
+  .sync-dot.err { background: var(--red); }
+  .sync-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px;
+    font-size: .88rem; font-weight: 500;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s ease;
+    z-index: 999; display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  .refresh-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 8px; padding: 6px 12px; font-size: .8rem; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; transition: all .2s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .cat-colors { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .cat-color-btn {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
+    cursor: pointer; transition: transform .2s;
+  }
+  .cat-color-btn.sel { border-color: #fff; transform: scale(1.2); }
+
+  .produtos-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .produtos-count { font-size: .8rem; color: var(--muted); }
+  .search-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    font-family: var(--font); font-size: .85rem; outline: none;
+    width: 200px; transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    🍽️ RestauraMix <div class="nav-badge">Admin</div>
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">← Garçom</a>
+    <a href="cozinha.html" class="nav-link">Cozinha</a>
+  </div>
+</nav>
+
+<!-- BANNER DE CONFIGURAÇÃO DO GOOGLE SHEETS -->
+<div class="config-banner" id="config-banner">
+  <span style="color:var(--accent);font-weight:600">⚙️ Cole a URL do seu Google Apps Script:</span>
+  <input type="text" id="sheets-url" placeholder="https://script.google.com/macros/s/SEU_ID/exec" />
+  <button class="btn-sm btn-accent" onclick="saveScriptUrl()">Salvar</button>
+  <button class="btn-sm btn-outline" onclick="showScriptHelp()">Como criar?</button>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('relatorios', this)">📊 Relatórios</button>
+  <button class="tab-btn" onclick="switchTab('cardapio', this)">🍔 Cardápio</button>
+</div>
+
+<main>
+
+  <!-- ── ABA RELATÓRIOS ── -->
+  <div class="tab-content active" id="tab-relatorios">
+
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter('hoje', this)">Hoje</button>
+      <button class="filter-btn" onclick="setFilter('7d', this)">7 dias</button>
+      <button class="filter-btn" onclick="setFilter('30d', this)">30 dias</button>
+      <button class="filter-btn" onclick="setFilter('tudo', this)">Tudo</button>
+      <button class="refresh-btn" onclick="buildReports()">↻ Atualizar</button>
+      <span class="sync-status" id="last-update" style="color:var(--muted)"></span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card accent">
+        <div class="kpi-label">Total de Pedidos</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub" id="kpi-total-sub">no período</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Itens Servidos</div>
+        <div class="kpi-value" id="kpi-itens">—</div>
+        <div class="kpi-sub">unidades no período</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Mesas Atendidas</div>
+        <div class="kpi-value" id="kpi-mesas">—</div>
+        <div class="kpi-sub">mesas únicas</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">Cancelamentos</div>
+        <div class="kpi-value" id="kpi-cancel">—</div>
+        <div class="kpi-sub">pedidos cancelados</div>
+      </div>
+    </div>
+
+    <div class="report-grid">
+
+      <!-- ITENS MAIS PEDIDOS -->
+      <div class="report-card">
+        <div class="report-card-title">🏆 Itens Mais Pedidos</div>
+        <div class="rank-list" id="rank-itens">
+          <div class="empty"><span class="icon">📋</span>Nenhum dado ainda</div>
+        </div>
+      </div>
+
+      <!-- MESAS MAIS ATIVAS -->
+      <div class="report-card">
+        <div class="report-card-title">🪑 Mesas Mais Ativas</div>
+        <div class="rank-list" id="rank-mesas">
+          <div class="empty"><span class="icon">📋</span>Nenhum dado ainda</div>
+        </div>
+      </div>
+
+      <!-- PEDIDOS POR HORA -->
+      <div class="report-card">
+        <div class="report-card-title">🕐 Pedidos por Hora</div>
+        <div class="bar-chart" id="chart-hora"></div>
+      </div>
+
+      <!-- PEDIDOS POR DIA -->
+      <div class="report-card">
+        <div class="report-card-title">📅 Pedidos por Dia da Semana</div>
+        <div class="bar-chart" id="chart-dia"></div>
+      </div>
+
+    </div>
+
+    <!-- HEATMAP MESAS -->
+    <div class="section">
+      <div class="section-title">🔥 Mapa de Calor — Mesas <span id="heat-period"></span></div>
+      <div class="mesa-heat-grid" id="mesa-heatmap"></div>
+    </div>
+
+    <!-- PEDIDOS URGENTES -->
+    <div class="section">
+      <div class="section-title">🔴 Distribuição por Prioridade</div>
+      <div class="rank-list" id="rank-prio"></div>
+    </div>
+
+  </div>
+
+  <!-- ── ABA CARDÁPIO ── -->
+  <div class="tab-content" id="tab-cardapio">
+
+    <div class="produtos-layout">
+
+      <!-- FORMULÁRIO -->
+      <div class="form-card">
+        <h3 id="form-title">Novo Produto</h3>
+
+        <div class="field">
+          <label>Nome do Produto *</label>
+          <input type="text" id="p-nome" placeholder="Ex: X-Burguer, Suco de Laranja..." maxlength="60" />
+        </div>
+
+        <div class="field">
+          <label>Preço (R$) *</label>
+          <input type="number" id="p-preco" placeholder="0,00" min="0" step="0.01" />
+        </div>
+
+        <div class="field">
+          <label>Categoria</label>
+          <select id="p-cat">
+            <option value="Lanches">🍔 Lanches</option>
+            <option value="Pratos">🍽️ Pratos</option>
+            <option value="Bebidas">🥤 Bebidas</option>
+            <option value="Sobremesas">🍰 Sobremesas</option>
+            <option value="Entradas">🥗 Entradas</option>
+            <option value="Outros">📦 Outros</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Descrição (opcional)</label>
+          <input type="text" id="p-desc" placeholder="Ex: com queijo cheddar e bacon" maxlength="100" />
+        </div>
+
+        <div class="field">
+          <label>Disponível</label>
+          <select id="p-ativo">
+            <option value="sim">✅ Sim</option>
+            <option value="nao">❌ Não (oculto no cardápio)</option>
+          </select>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm btn-green" style="flex:1;padding:11px" onclick="salvarProduto()">💾 Salvar Produto</button>
+          <button class="btn-sm btn-outline" onclick="cancelarEdicao()" id="btn-cancelar" style="display:none">Cancelar</button>
+        </div>
+
+        <div class="sync-status" id="sync-status">
+          <div class="sync-dot" id="sync-dot"></div>
+          <span id="sync-text">Aguardando URL do script...</span>
+        </div>
+      </div>
+
+      <!-- LISTA DE PRODUTOS -->
+      <div>
+        <div class="produtos-header">
+          <span class="produtos-count" id="produtos-count">0 produtos</span>
+          <input type="text" class="search-input" placeholder="🔍 Buscar produto..." oninput="filtrarProdutos(this.value)" />
+        </div>
+        <div class="produtos-list" id="produtos-list">
+          <div class="empty"><span class="icon">🍽️</span>Nenhum produto cadastrado ainda</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL HELP -->
+<div id="help-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:560px;width:90%;max-height:85vh;overflow-y:auto">
+    <h3 style="margin-bottom:16px;color:var(--accent)">Como criar o Google Apps Script</h3>
+    <ol style="color:var(--muted);font-size:.88rem;line-height:2;padding-left:18px">
+      <li>Acesse <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">sheets.google.com</a> e crie uma planilha nova</li>
+      <li>Nomeie como <strong style="color:var(--text)">RestauraMix — Cardápio</strong></li>
+      <li>Vá em <strong style="color:var(--text)">Extensões → Apps Script</strong></li>
+      <li>Apague o código existente e cole o código abaixo</li>
+      <li>Clique em <strong style="color:var(--text)">Implantar → Nova implantação</strong></li>
+      <li>Tipo: <strong style="color:var(--text)">App da Web</strong></li>
+      <li>Executar como: <strong style="color:var(--text)">Eu</strong></li>
+      <li>Quem tem acesso: <strong style="color:var(--text)">Qualquer pessoa</strong></li>
+      <li>Clique <strong style="color:var(--text)">Implantar</strong> e copie a URL gerada</li>
+      <li>Cole a URL no campo acima e clique Salvar</li>
+    </ol>
+    <div style="margin-top:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:monospace;font-size:.75rem;color:var(--green);white-space:pre-wrap;user-select:all" id="script-code"></div>
+    <button class="btn-sm btn-accent" style="margin-top:16px;width:100%" onclick="copyScript()">📋 Copiar Código</button>
+    <button class="btn-sm btn-outline" style="margin-top:8px;width:100%" onclick="closeHelp()">Fechar</button>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTES ────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'restauramix_orders';
+const PRODUCTS_KEY = 'restauramix_products';
+const SCRIPT_URL_KEY = 'restauramix_script_url';
+const channel = new BroadcastChannel('restauramix');
+
+let currentFilter = 'hoje';
+let allOrders = [];
+let produtos = [];
+let editingId = null;
+let toastTimer = null;
+
+// ── APPS SCRIPT CODE ──────────────────────────────────────────────────────────
+const APPS_SCRIPT_CODE = `function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Produtos') 
+    || SpreadsheetApp.getActiveSpreadsheet().insertSheet('Produtos');
+  var data = JSON.parse(e.postData.contents);
+  var action = data.action;
+  
+  if (action === 'GET') {
+    var rows = sheet.getDataRange().getValues();
+    var products = rows.slice(1).map(function(r) {
+      return { id: r[0], nome: r[1], preco: r[2], categoria: r[3], descricao: r[4], ativo: r[5] };
+    });
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, data: products }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  if (action === 'SAVE') {
+    var p = data.produto;
+    var rows2 = sheet.getDataRange().getValues();
+    var found = -1;
+    for (var i = 1; i < rows2.length; i++) {
+      if (rows2[i][0] === p.id) { found = i + 1; break; }
+    }
+    if (found > 0) {
+      sheet.getRange(found, 1, 1, 6).setValues([[p.id, p.nome, p.preco, p.categoria, p.descricao, p.ativo]]);
+    } else {
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['ID','Nome','Preco','Categoria','Descricao','Ativo']);
+      }
+      sheet.appendRow([p.id, p.nome, p.preco, p.categoria, p.descricao, p.ativo]);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  if (action === 'DELETE') {
+    var rows3 = sheet.getDataRange().getValues();
+    for (var j = 1; j < rows3.length; j++) {
+      if (rows3[j][0] === data.id) { sheet.deleteRow(j + 1); break; }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'Ação inválida' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  return doPost({ postData: { contents: JSON.stringify({ action: 'GET' }) } });
+}`;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('script-code').textContent = APPS_SCRIPT_CODE;
+
+function init() {
+  loadOrders();
+  buildReports();
+  checkScriptUrl();
+  loadProdutos();
+}
+
+// ── ORDERS (localStorage) ─────────────────────────────────────────────────────
+function loadOrders() {
+  try { allOrders = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { allOrders = []; }
+}
+
+channel.onmessage = () => {
+  loadOrders();
+  buildReports();
+  showToast('Dados atualizados!', '🔄');
+};
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildReports();
+}
+
+function filterByPeriod(orders) {
+  const now = Date.now();
+  const day = 86400000;
+  if (currentFilter === 'hoje') {
+    const start = new Date(); start.setHours(0,0,0,0);
+    return orders.filter(o => o.ts >= start.getTime());
+  }
+  if (currentFilter === '7d') return orders.filter(o => o.ts >= now - 7 * day);
+  if (currentFilter === '30d') return orders.filter(o => o.ts >= now - 30 * day);
+  return orders;
+}
+
+// ── RELATÓRIOS ────────────────────────────────────────────────────────────────
+function buildReports() {
+  loadOrders();
+  const filtered = filterByPeriod(allOrders);
+  const active = filtered.filter(o => o.status !== 'cancelado');
+  const cancelled = filtered.filter(o => o.status === 'cancelado');
+
+  // KPIs
+  const totalItens = active.reduce((s, o) => s + o.items.reduce((a, i) => a + (i.qty || 1), 0), 0);
+  const mesas = new Set(active.map(o => o.mesa)).size;
+  setText('kpi-total', active.length);
+  setText('kpi-itens', totalItens);
+  setText('kpi-mesas', mesas);
+  setText('kpi-cancel', cancelled.length);
+
+  const now = new Date();
+  setText('last-update', `Atualizado às ${now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`);
+
+  buildRankItens(active);
+  buildRankMesas(active);
+  buildChartHora(active);
+  buildChartDia(active);
+  buildHeatmap(active);
+  buildRankPrio(active);
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function buildRankItens(orders) {
+  const counter = {};
+  orders.forEach(o => o.items.forEach(i => {
+    const name = i.name.trim();
+    if (!name) return;
+    counter[name] = (counter[name] || 0) + (i.qty || 1);
+  }));
+  const sorted = Object.entries(counter).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const max = sorted[0]?.[1] || 1;
+  const poses = ['gold','silver','bronze'];
+  const el = document.getElementById('rank-itens');
+  if (!sorted.length) { el.innerHTML = '<div class="empty"><span class="icon">📋</span>Sem dados</div>'; return; }
+  el.innerHTML = sorted.map(([name, qty], i) => `
+    <div class="rank-item">
+      <div class="rank-pos ${poses[i] || ''}">${i+1}</div>
+      <div class="rank-name">${name}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(qty/max*100)}%"></div></div>
+      <div class="rank-count">${qty}x</div>
+    </div>`).join('');
+}
+
+function buildRankMesas(orders) {
+  const counter = {};
+  orders.forEach(o => { counter[o.mesa] = (counter[o.mesa] || 0) + 1; });
+  const sorted = Object.entries(counter).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const max = sorted[0]?.[1] || 1;
+  const poses = ['gold','silver','bronze'];
+  const el = document.getElementById('rank-mesas');
+  if (!sorted.length) { el.innerHTML = '<div class="empty"><span class="icon">📋</span>Sem dados</div>'; return; }
+  el.innerHTML = sorted.map(([mesa, qty], i) => `
+    <div class="rank-item">
+      <div class="rank-pos ${poses[i] || ''}">${i+1}</div>
+      <div class="rank-name">Mesa ${mesa}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(qty/max*100)}%"></div></div>
+      <div class="rank-count">${qty}</div>
+    </div>`).join('');
+}
+
+function buildChartHora(orders) {
+  const hours = Array(24).fill(0);
+  orders.forEach(o => { hours[new Date(o.ts).getHours()]++; });
+  // Mostrar apenas hora 7 a 23
+  const slice = hours.slice(7, 24);
+  const max = Math.max(...slice, 1);
+  const el = document.getElementById('chart-hora');
+  el.innerHTML = slice.map((v, i) => `
+    <div class="bar-col">
+      <div class="bar-val">${v || ''}</div>
+      <div class="bar-fill" style="height:${Math.round(v/max*90)}px;background:${v > 0 ? 'var(--accent)' : 'var(--surface2)'}"></div>
+      <div class="bar-label">${i+7}h</div>
+    </div>`).join('');
+}
+
+function buildChartDia(orders) {
+  const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const counts = Array(7).fill(0);
+  orders.forEach(o => { counts[new Date(o.ts).getDay()]++; });
+  const max = Math.max(...counts, 1);
+  const colors = ['var(--blue)','var(--accent)','var(--accent)','var(--accent)','var(--accent)','var(--green)','var(--blue)'];
+  const el = document.getElementById('chart-dia');
+  el.innerHTML = counts.map((v, i) => `
+    <div class="bar-col">
+      <div class="bar-val">${v || ''}</div>
+      <div class="bar-fill" style="height:${Math.round(v/max*90)}px;background:${v > 0 ? colors[i] : 'var(--surface2)'}"></div>
+      <div class="bar-label">${days[i]}</div>
+    </div>`).join('');
+}
+
+function buildHeatmap(orders) {
+  const counter = {};
+  orders.forEach(o => { counter[o.mesa] = (counter[o.mesa] || 0) + 1; });
+  const max = Math.max(...Object.values(counter), 1);
+  const el = document.getElementById('mesa-heatmap');
+  el.innerHTML = Array.from({length: 12}, (_, i) => i + 1).map(n => {
+    const v = counter[n] || 0;
+    const intensity = v / max;
+    const bg = v === 0 ? 'var(--surface2)' : `rgba(245,166,35,${0.1 + intensity * 0.7})`;
+    return `<div class="heat-cell" style="background:${bg}">
+      <div class="h-num" style="color:${v > 0 ? 'var(--text)' : 'var(--muted)'}">Mesa ${n}</div>
+      <div class="h-count">${v} pedido${v !== 1 ? 's' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+function buildRankPrio(orders) {
+  const counter = { urgente: 0, alta: 0, normal: 0 };
+  orders.forEach(o => { if (counter[o.prioridade] !== undefined) counter[o.prioridade]++; });
+  const total = orders.length || 1;
+  const labels = { urgente: '🔴 Urgente', alta: '🟡 Alta', normal: '🟢 Normal' };
+  const colors = { urgente: 'var(--red)', alta: 'var(--accent)', normal: 'var(--green)' };
+  const el = document.getElementById('rank-prio');
+  el.innerHTML = Object.entries(counter).map(([k, v]) => `
+    <div class="rank-item">
+      <div class="rank-name">${labels[k]}</div>
+      <div class="rank-bar-wrap" style="width:120px"><div class="rank-bar" style="width:${Math.round(v/total*100)}%;background:${colors[k]}"></div></div>
+      <div class="rank-count" style="color:${colors[k]}">${v}</div>
+    </div>`).join('');
+}
+
+// ── PRODUTOS / CARDÁPIO ───────────────────────────────────────────────────────
+function getScriptUrl() { return localStorage.getItem(SCRIPT_URL_KEY) || ''; }
+
+function saveScriptUrl() {
+  const url = document.getElementById('sheets-url').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showToast('URL inválida. Deve começar com https://script.google.com', '⚠️');
+    return;
+  }
+  localStorage.setItem(SCRIPT_URL_KEY, url);
+  checkScriptUrl();
+  loadProdutos();
+  showToast('URL salva! Carregando produtos...', '✅');
+}
+
+function checkScriptUrl() {
+  const url = getScriptUrl();
+  const banner = document.getElementById('config-banner');
+  if (url) {
+    banner.classList.add('ok');
+    banner.querySelector('span').textContent = '✅ Google Sheets conectado';
+    document.getElementById('sheets-url').value = url;
+    setSyncStatus('ok', 'Conectado ao Google Sheets');
+  } else {
+    banner.classList.remove('ok');
+    setSyncStatus('err', 'URL do script não configurada');
+  }
+}
+
+function setSyncStatus(state, text) {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  dot.className = 'sync-dot ' + state;
+  txt.textContent = text;
+}
+
+async function loadProdutos() {
+  const url = getScriptUrl();
+  if (!url) {
+    renderProdutos();
+    return;
+  }
+  setSyncStatus('loading', 'Carregando do Google Sheets...');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'GET' })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      produtos = data.data.filter(p => p.id);
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(produtos));
+      setSyncStatus('ok', `${produtos.length} produtos carregados`);
+    } else {
+      throw new Error('Resposta inválida');
+    }
+  } catch (err) {
+    // fallback para localStorage
+    try { produtos = JSON.parse(localStorage.getItem(PRODUCTS_KEY)) || []; } catch { produtos = []; }
+    setSyncStatus('err', 'Erro ao conectar — usando cache local');
+  }
+  renderProdutos();
+}
+
+async function salvarProduto() {
+  const nome = document.getElementById('p-nome').value.trim();
+  const preco = parseFloat(document.getElementById('p-preco').value);
+  const cat = document.getElementById('p-cat').value;
+  const desc = document.getElementById('p-desc').value.trim();
+  const ativo = document.getElementById('p-ativo').value;
+
+  if (!nome) { showToast('Nome obrigatório!', '⚠️'); return; }
+  if (isNaN(preco) || preco < 0) { showToast('Preço inválido!', '⚠️'); return; }
+
+  const produto = {
+    id: editingId || 'p' + Date.now(),
+    nome, preco, categoria: cat, descricao: desc, ativo
+  };
+
+  // Atualiza local imediatamente
+  if (editingId) {
+    const idx = produtos.findIndex(p => p.id === editingId);
+    if (idx >= 0) produtos[idx] = produto;
+  } else {
+    produtos.push(produto);
+  }
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(produtos));
+  renderProdutos();
+  limparForm();
+  showToast(editingId ? 'Produto atualizado!' : 'Produto adicionado!', '✅');
+
+  // Sincroniza com Sheets
+  const url = getScriptUrl();
+  if (!url) return;
+  setSyncStatus('loading', 'Salvando no Google Sheets...');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'SAVE', produto })
+    });
+    const data = await res.json();
+    if (data.ok) setSyncStatus('ok', 'Salvo no Google Sheets ✓');
+    else throw new Error();
+  } catch {
+    setSyncStatus('err', 'Salvo local — falha no Sheets');
+  }
+}
+
+async function deletarProduto(id) {
+  if (!confirm('Remover este produto?')) return;
+  produtos = produtos.filter(p => p.id !== id);
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(produtos));
+  renderProdutos();
+  showToast('Produto removido', '🗑️');
+
+  const url = getScriptUrl();
+  if (!url) return;
+  try {
+    await fetch(url, { method: 'POST', body: JSON.stringify({ action: 'DELETE', id }) });
+  } catch { /* silencioso */ }
+}
+
+function editarProduto(id) {
+  const p = produtos.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('p-nome').value = p.nome;
+  document.getElementById('p-preco').value = p.preco;
+  document.getElementById('p-cat').value = p.categoria;
+  document.getElementById('p-desc').value = p.descricao || '';
+  document.getElementById('p-ativo').value = p.ativo || 'sim';
+  document.getElementById('form-title').textContent = 'Editar Produto';
+  document.getElementById('btn-cancelar').style.display = 'inline-block';
+  document.getElementById('p-nome').focus();
+}
+
+function cancelarEdicao() {
+  limparForm();
+}
+
+function limparForm() {
+  editingId = null;
+  ['p-nome','p-preco','p-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-cat').value = 'Lanches';
+  document.getElementById('p-ativo').value = 'sim';
+  document.getElementById('form-title').textContent = 'Novo Produto';
+  document.getElementById('btn-cancelar').style.display = 'none';
+}
+
+function filtrarProdutos(q) {
+  renderProdutos(q.toLowerCase());
+}
+
+const catColors = {
+  'Lanches': '#f5a623', 'Pratos': '#e05c2a', 'Bebidas': '#4a90e2',
+  'Sobremesas': '#9b59b6', 'Entradas': '#2dcc7a', 'Outros': '#6b7280'
+};
+
+function renderProdutos(busca = '') {
+  const list = document.getElementById('produtos-list');
+  const count = document.getElementById('produtos-count');
+  let visible = produtos;
+  if (busca) visible = produtos.filter(p => p.nome.toLowerCase().includes(busca) || (p.categoria||'').toLowerCase().includes(busca));
+  count.textContent = `${visible.length} produto${visible.length !== 1 ? 's' : ''}`;
+  if (!visible.length) {
+    list.innerHTML = `<div class="empty"><span class="icon">🍽️</span>${busca ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado ainda'}</div>`;
+    return;
+  }
+  // Agrupar por categoria
+  const grupos = {};
+  visible.forEach(p => {
+    if (!grupos[p.categoria]) grupos[p.categoria] = [];
+    grupos[p.categoria].push(p);
+  });
+  list.innerHTML = Object.entries(grupos).map(([cat, prods]) => `
+    <div style="margin-bottom:4px">
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px">${cat}</div>
+      ${prods.map(p => `
+        <div class="produto-card" style="opacity:${p.ativo === 'nao' ? '.5' : '1'}">
+          <div class="produto-cat-dot" style="background:${catColors[p.categoria] || '#6b7280'}"></div>
+          <div class="produto-info">
+            <h4>${p.nome} ${p.ativo === 'nao' ? '<span style="font-size:.7rem;color:var(--muted)">(inativo)</span>' : ''}</h4>
+            <p>${p.descricao || p.categoria}</p>
+          </div>
+          <div class="produto-price">R$ ${parseFloat(p.preco).toFixed(2).replace('.',',')}</div>
+          <div class="produto-actions">
+            <button class="btn-icon edit" onclick="editarProduto('${p.id}')" title="Editar">✏️</button>
+            <button class="btn-icon" onclick="deletarProduto('${p.id}')" title="Remover">🗑️</button>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+// ── SCRIPT HELP ───────────────────────────────────────────────────────────────
+function showScriptHelp() {
+  const m = document.getElementById('help-modal');
+  m.style.display = 'flex';
+}
+function closeHelp() {
+  document.getElementById('help-modal').style.display = 'none';
+}
+function copyScript() {
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE)
+    .then(() => showToast('Código copiado!', '📋'))
+    .catch(() => showToast('Selecione e copie manualmente', '⚠️'));
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, icon = '✅') {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${icon}</span> ${msg}`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
